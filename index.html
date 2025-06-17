@@ -88,30 +88,37 @@
     function convert() {
       const input = document.getElementById("textInput").value.trim();
       const isBracketed = input.startsWith('[') && input.endsWith(']');
-      const rawText = isBracketed ? input.slice(1, -1) : input;
+      const raw = isBracketed ? input.slice(1, -1) : input;
 
-      let encoded = "";
-      let decoded = "";
+      let encoded = '';
+      let decoded = '';
 
       if (isBracketed) {
-        // === 123.html logic ===
-        for (const char of rawText) {
+        // === 123.html LOGIC ===
+        // ENCODE: convert letters to digits
+        for (const char of raw) {
           if (/[a-z]/i.test(char)) {
             encoded += letterToDigit[char.toLowerCase()] || char;
           } else if (char === '_') {
             encoded += '0';
           } else {
-            encoded += char; // keep numbers or symbols
+            encoded += char;
           }
         }
 
-        for (const char of encoded) {
-          decoded += t9Map[char] ? getRandomFromArray(t9Map[char]) : char;
+        // DECODE: convert digits to random letters, leave others
+        for (const char of raw) {
+          if (t9Map[char]) {
+            decoded += getRandomFromArray(t9Map[char]);
+          } else {
+            decoded += char;
+          }
         }
 
       } else {
-        // === index.html logic ===
-        for (const char of rawText) {
+        // === index.html LOGIC ===
+        // ENCODE
+        for (const char of raw) {
           const lowerChar = char.toLowerCase();
           if (lowerChar === " ") {
             encoded += "_";
@@ -132,16 +139,17 @@
         }
         if (encoded.endsWith("0")) encoded = encoded.slice(0, -1);
 
+        // DECODE
         let i = 0;
-        while (i < rawText.length) {
-          const ch = rawText[i];
+        while (i < raw.length) {
+          const ch = raw[i];
           if (ch === "_") {
             decoded += " ";
             i++;
-          } else if (/[2-9]/.test(ch) && i + 2 < rawText.length &&
-                     /[1-4]/.test(rawText[i + 1]) && rawText[i + 2] === "0") {
+          } else if (/[2-9]/.test(ch) && i + 2 < raw.length &&
+                     /[1-4]/.test(raw[i + 1]) && raw[i + 2] === "0") {
             const key = ch;
-            const index = parseInt(rawText[i + 1]) - 1;
+            const index = parseInt(raw[i + 1]) - 1;
             decoded += t9Map[key]?.[index] || "?";
             i += 3;
           } else {
