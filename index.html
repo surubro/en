@@ -3,31 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Combined T9 Encoder and Decoder</title>
+  <title>Smart T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
-    button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #45a049; }
-    .output { margin-top: 20px; font-weight: bold; }
-    .text-box {
-      width: 100%; padding: 10px; background-color: #f1f1f1;
-      border: 1px solid #ccc; margin-bottom: 10px; word-wrap: break-word;
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
+    button:hover { background-color: #45a049; }
     .copy-btn {
-      padding: 5px 10px; background-color: #008CBA;
-      color: white; border: none; cursor: pointer;
+      margin-top: 5px;
+      padding: 5px 10px;
+      background-color: #008CBA;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
     .copy-btn:hover { background-color: #007B9E; }
+    .output {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .text-box {
+      width: 100%;
+      padding: 10px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
     .copyright {
-      margin-top: 40px; text-align: center; color: #777;
+      margin-top: 40px;
+      text-align: center;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <h1>Combined T9 Encoder and Decoder</h1>
-  <label for="textInput">Enter message (with or without square brackets):</label>
-  <textarea id="textInput" placeholder="Try typing [hello] or hello or 43556"></textarea>
+  <h1>Smart T9 Encoder and Decoder</h1>
+  <label for="textInput">Enter message (e.g. [abc123] or normal text):</label>
+  <textarea id="textInput" placeholder="Try '[hi_123]' or 'hi' or '420430'"></textarea>
   <button onclick="convert()">Convert</button>
 
   <div class="output">
@@ -68,34 +87,37 @@
 
     function convert() {
       const input = document.getElementById("textInput").value.trim();
+      const isBracketed = input.startsWith('[') && input.endsWith(']');
+      const rawText = isBracketed ? input.slice(1, -1) : input;
+
       let encoded = "";
       let decoded = "";
 
-      const isBracketed = input.startsWith('[') && input.endsWith(']');
-
       if (isBracketed) {
-        const cleanInput = input.slice(1, -1).toLowerCase();
-        // Encode using letterToDigit
-        for (const char of cleanInput) {
-          encoded += letterToDigit[char] || char;
+        // === 123.html logic ===
+        for (const char of rawText) {
+          if (/[a-z]/i.test(char)) {
+            encoded += letterToDigit[char.toLowerCase()] || char;
+          } else if (char === '_') {
+            encoded += '0';
+          } else {
+            encoded += char; // keep numbers or symbols
+          }
         }
 
-        // Decode using random letters
-        for (const char of cleanInput) {
-          decoded += (t9Map[char] ? getRandomFromArray(t9Map[char]) : char);
+        for (const char of encoded) {
+          decoded += t9Map[char] ? getRandomFromArray(t9Map[char]) : char;
         }
 
       } else {
         // === index.html logic ===
-        const t9Keys = t9Map; // Same structure
-        // Encoding
-        for (const char of input) {
+        for (const char of rawText) {
           const lowerChar = char.toLowerCase();
           if (lowerChar === " ") {
             encoded += "_";
           } else if (/[a-z]/.test(lowerChar)) {
             let found = false;
-            for (const [key, letters] of Object.entries(t9Keys)) {
+            for (const [key, letters] of Object.entries(t9Map)) {
               const index = letters.indexOf(lowerChar);
               if (index !== -1) {
                 encoded += key + (index + 1) + "0";
@@ -110,18 +132,17 @@
         }
         if (encoded.endsWith("0")) encoded = encoded.slice(0, -1);
 
-        // Decoding
         let i = 0;
-        while (i < input.length) {
-          const ch = input[i];
+        while (i < rawText.length) {
+          const ch = rawText[i];
           if (ch === "_") {
             decoded += " ";
             i++;
-          } else if (/[2-9]/.test(ch) && i + 2 < input.length &&
-                     /[1-4]/.test(input[i + 1]) && input[i + 2] === "0") {
+          } else if (/[2-9]/.test(ch) && i + 2 < rawText.length &&
+                     /[1-4]/.test(rawText[i + 1]) && rawText[i + 2] === "0") {
             const key = ch;
-            const index = parseInt(input[i + 1]) - 1;
-            decoded += t9Keys[key]?.[index] || "?";
+            const index = parseInt(rawText[i + 1]) - 1;
+            decoded += t9Map[key]?.[index] || "?";
             i += 3;
           } else {
             decoded += ch;
@@ -136,10 +157,9 @@
 
     function copyText(id) {
       const text = document.getElementById(id).innerText;
-      navigator.clipboard.writeText(text).then(
-        () => alert("Text copied to clipboard!"),
-        err => alert("Copy failed: " + err)
-      );
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Text copied to clipboard!"))
+        .catch(err => alert("Copy failed: " + err));
     }
   </script>
 </body>
