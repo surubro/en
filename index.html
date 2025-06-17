@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Combined T9 Encoder Decoder</title>
+  <title>Smart T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -45,8 +45,8 @@
 </head>
 <body>
   <h1>Smart T9 Encoder and Decoder</h1>
-  <label for="textInput">Enter message (mixed or bracketed like [abc]):</label>
-  <textarea id="textInput" placeholder="Try '[abc]text[xyz]more' or '710...'"></textarea>
+  <label for="textInput">Enter message (with or without [brackets]):</label>
+  <textarea id="textInput" placeholder="Try '[abc]71032' or '710...'"></textarea>
   <button onclick="convert()">Convert</button>
 
   <div class="output">
@@ -78,7 +78,9 @@
 
     const letterToDigit = {};
     for (const digit in t9Map) {
-      t9Map[digit].forEach(letter => letterToDigit[letter] = digit);
+      t9Map[digit].forEach(letter => {
+        letterToDigit[letter] = digit;
+      });
     }
 
     function getRandomFromArray(arr) {
@@ -164,22 +166,21 @@
       for (const match of matches) {
         const start = match.index;
         const end = start + match[0].length;
-
         const before = input.substring(lastIndex, start);
-        const inside = match[0].slice(1, -1); // remove [ ]
+        const inside = match[0].slice(1, -1); // content inside [ ]
 
-        // Handle part before brackets
+        // Encode/decode non-bracketed part
         encodedFinal += encodeIndexLogic(before);
         decodedFinal += decodeIndexLogic(before);
 
-        // Handle bracket part
-        encodedFinal += encodeBracketLogic(inside);
-        decodedFinal += decodeBracketLogic(inside);
+        // Encode/decode bracketed part
+        encodedFinal += encodeBracketLogic(inside); // no brackets in encoded
+        decodedFinal += '[' + decodeBracketLogic(inside) + ']'; // with brackets in decoded
 
         lastIndex = end;
       }
 
-      // Handle any remaining after last bracket
+      // Handle remaining non-bracketed part
       const remaining = input.slice(lastIndex);
       encodedFinal += encodeIndexLogic(remaining);
       decodedFinal += decodeIndexLogic(remaining);
