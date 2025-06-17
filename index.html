@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Combined T9 Encoder and Decoder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 50px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 20px; }
+    button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    .output { margin-top: 20px; font-weight: bold; }
+    .text-box {
+      width: 100%; padding: 10px; background-color: #f1f1f1;
+      border: 1px solid #ccc; margin-bottom: 10px; word-wrap: break-word;
+    }
+    .copy-btn {
+      padding: 5px 10px; background-color: #008CBA;
+      color: white; border: none; cursor: pointer;
+    }
+    .copy-btn:hover { background-color: #007B9E; }
+    .copyright {
+      margin-top: 40px; text-align: center; color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>Combined T9 Encoder and Decoder</h1>
+  <label for="textInput">Enter message (with or without square brackets):</label>
+  <textarea id="textInput" placeholder="Try typing [hello] or hello or 43556"></textarea>
+  <button onclick="convert()">Convert</button>
+
+  <div class="output">
+    <p><strong>Encoded Message:</strong></p>
+    <div id="encodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('encodedMessage')">Copy</button>
+
+    <p><strong>Decoded Message:</strong></p>
+    <div id="decodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('decodedMessage')">Copy</button>
+  </div>
+
+  <div class="copyright">
+    Made with ❤️ by Surendra Sonawane
+  </div>
+
+  <script>
+    const t9Map = {
+      '2': ['a', 'b', 'c'],
+      '3': ['d', 'e', 'f'],
+      '4': ['g', 'h', 'i'],
+      '5': ['j', 'k', 'l'],
+      '6': ['m', 'n', 'o'],
+      '7': ['p', 'q', 'r', 's'],
+      '8': ['t', 'u', 'v'],
+      '9': ['w', 'x', 'y', 'z'],
+      '0': ['_']
+    };
+
+    const letterToDigit = {};
+    for (const digit in t9Map) {
+      t9Map[digit].forEach(letter => letterToDigit[letter] = digit);
+    }
+
+    function getRandomFromArray(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function convert() {
+      const input = document.getElementById("textInput").value.trim();
+      let encoded = "";
+      let decoded = "";
+
+      const isBracketed = input.startsWith('[') && input.endsWith(']');
+
+      if (isBracketed) {
+        const cleanInput = input.slice(1, -1).toLowerCase();
+        // Encode using letterToDigit
+        for (const char of cleanInput) {
+          encoded += letterToDigit[char] || char;
+        }
+
+        // Decode using random letters
+        for (const char of cleanInput) {
+          decoded += (t9Map[char] ? getRandomFromArray(t9Map[char]) : char);
+        }
+
+      } else {
+        // === index.html logic ===
+        const t9Keys = t9Map; // Same structure
+        // Encoding
+        for (const char of input) {
+          const lowerChar = char.toLowerCase();
+          if (lowerChar === " ") {
+            encoded += "_";
+          } else if (/[a-z]/.test(lowerChar)) {
+            let found = false;
+            for (const [key, letters] of Object.entries(t9Keys)) {
+              const index = letters.indexOf(lowerChar);
+              if (index !== -1) {
+                encoded += key + (index + 1) + "0";
+                found = true;
+                break;
+              }
+            }
+            if (!found) encoded += char;
+          } else {
+            encoded += char;
+          }
+        }
+        if (encoded.endsWith("0")) encoded = encoded.slice(0, -1);
+
+        // Decoding
+        let i = 0;
+        while (i < input.length) {
+          const ch = input[i];
+          if (ch === "_") {
+            decoded += " ";
+            i++;
+          } else if (/[2-9]/.test(ch) && i + 2 < input.length &&
+                     /[1-4]/.test(input[i + 1]) && input[i + 2] === "0") {
+            const key = ch;
+            const index = parseInt(input[i + 1]) - 1;
+            decoded += t9Keys[key]?.[index] || "?";
+            i += 3;
+          } else {
+            decoded += ch;
+            i++;
+          }
+        }
+      }
+
+      document.getElementById("encodedMessage").innerText = encoded || "No encoded message";
+      document.getElementById("decodedMessage").innerText = decoded || "No decoded message";
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(
+        () => alert("Text copied to clipboard!"),
+        err => alert("Copy failed: " + err)
+      );
+    }
+  </script>
+</body>
+</html>
