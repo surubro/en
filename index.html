@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart22 T9 Encoder Decoder</title>
+  <title>Smart T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -78,13 +78,7 @@
 
     const letterToDigit = {};
     for (const digit in t9Map) {
-      t9Map[digit].forEach(letter => {
-        letterToDigit[letter] = digit;
-      });
-    }
-
-    function getRandomFromArray(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
+      t9Map[digit].forEach(letter => letterToDigit[letter] = digit);
     }
 
     function encodeIndexLogic(text) {
@@ -94,16 +88,13 @@
         if (lowerChar === " ") {
           encoded += "_";
         } else if (/[a-z]/.test(lowerChar)) {
-          let found = false;
           for (const [key, letters] of Object.entries(t9Map)) {
             const index = letters.indexOf(lowerChar);
             if (index !== -1) {
               encoded += key + (index + 1) + "0";
-              found = true;
               break;
             }
           }
-          if (!found) encoded += char;
         } else {
           encoded += char;
         }
@@ -132,7 +123,7 @@
       return decoded;
     }
 
-    function encodeBracketLogic(text) {
+    function encodeBracketContent(text) {
       let encoded = '';
       for (const char of text) {
         if (/[a-z]/i.test(char)) {
@@ -144,14 +135,6 @@
         }
       }
       return encoded;
-    }
-
-    function decodeBracketLogic(text) {
-      let decoded = '';
-      for (const char of text) {
-        decoded += t9Map[char] ? getRandomFromArray(t9Map[char]) : char;
-      }
-      return decoded;
     }
 
     function convert() {
@@ -167,20 +150,23 @@
         const start = match.index;
         const end = start + match[0].length;
         const before = input.substring(lastIndex, start);
-        const inside = match[0].slice(1, -1); // content inside [ ]
+        const inside = match[0].slice(1, -1); // remove [ ]
 
-        // Encode/decode non-bracketed part
+        // Encode and decode the part before brackets
         encodedFinal += encodeIndexLogic(before);
         decodedFinal += decodeIndexLogic(before);
 
-        // Encode/decode bracketed part
-        encodedFinal += encodeBracketLogic(inside); // no brackets in encoded
-        decodedFinal += '[' + decodeBracketLogic(inside) + ']'; // with brackets in decoded
+        // Encode the [content] and append without brackets to encoded
+        const encodedInside = encodeBracketContent(inside);
+        encodedFinal += encodedInside;
+
+        // In decoded message, show [encodedInside]
+        decodedFinal += '[' + encodedInside + ']';
 
         lastIndex = end;
       }
 
-      // Handle remaining non-bracketed part
+      // Handle remaining non-bracket part
       const remaining = input.slice(lastIndex);
       encodedFinal += encodeIndexLogic(remaining);
       decodedFinal += decodeIndexLogic(remaining);
