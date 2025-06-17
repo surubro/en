@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smartx T9 Encoder Decoder</title>
+  <title>Combined T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -45,8 +45,8 @@
 </head>
 <body>
   <h1>Smart T9 Encoder and Decoder</h1>
-  <label for="textInput">Enter message (e.g. [abc123] or normal text):</label>
-  <textarea id="textInput" placeholder="Try '[hi_123]' or 'hi' or '420430'"></textarea>
+  <label for="textInput">Enter message (mixed or bracketed like [abc]):</label>
+  <textarea id="textInput" placeholder="Try '[abc]text[xyz]more' or '710...'"></textarea>
   <button onclick="convert()">Convert</button>
 
   <div class="output">
@@ -85,82 +85,107 @@
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    function convert() {
-      const input = document.getElementById("textInput").value.trim();
-      const isBracketed = input.startsWith('[') && input.endsWith(']');
-      const raw = isBracketed ? input.slice(1, -1) : input;
-
+    function encodeIndexLogic(text) {
       let encoded = '';
-      let decoded = '';
-
-      if (isBracketed) {
-        // === 123.html LOGIC ===
-        // ENCODE: convert letters to digits
-        for (const char of raw) {
-          if (/[a-z]/i.test(char)) {
-            encoded += letterToDigit[char.toLowerCase()] || char;
-          } else if (char === '_') {
-            encoded += '0';
-          } else {
-            encoded += char;
-          }
-        }
-
-        // DECODE: convert digits to random letters, leave others
-        for (const char of raw) {
-          if (t9Map[char]) {
-            decoded += getRandomFromArray(t9Map[char]);
-          } else {
-            decoded += char;
-          }
-        }
-
-      } else {
-        // === index.html LOGIC ===
-        // ENCODE
-        for (const char of raw) {
-          const lowerChar = char.toLowerCase();
-          if (lowerChar === " ") {
-            encoded += "_";
-          } else if (/[a-z]/.test(lowerChar)) {
-            let found = false;
-            for (const [key, letters] of Object.entries(t9Map)) {
-              const index = letters.indexOf(lowerChar);
-              if (index !== -1) {
-                encoded += key + (index + 1) + "0";
-                found = true;
-                break;
-              }
+      for (const char of text) {
+        const lowerChar = char.toLowerCase();
+        if (lowerChar === " ") {
+          encoded += "_";
+        } else if (/[a-z]/.test(lowerChar)) {
+          let found = false;
+          for (const [key, letters] of Object.entries(t9Map)) {
+            const index = letters.indexOf(lowerChar);
+            if (index !== -1) {
+              encoded += key + (index + 1) + "0";
+              found = true;
+              break;
             }
-            if (!found) encoded += char;
-          } else {
-            encoded += char;
           }
-        }
-        if (encoded.endsWith("0")) encoded = encoded.slice(0, -1);
-
-        // DECODE
-        let i = 0;
-        while (i < raw.length) {
-          const ch = raw[i];
-          if (ch === "_") {
-            decoded += " ";
-            i++;
-          } else if (/[2-9]/.test(ch) && i + 2 < raw.length &&
-                     /[1-4]/.test(raw[i + 1]) && raw[i + 2] === "0") {
-            const key = ch;
-            const index = parseInt(raw[i + 1]) - 1;
-            decoded += t9Map[key]?.[index] || "?";
-            i += 3;
-          } else {
-            decoded += ch;
-            i++;
-          }
+          if (!found) encoded += char;
+        } else {
+          encoded += char;
         }
       }
+      return encoded.endsWith("0") ? encoded.slice(0, -1) : encoded;
+    }
 
-      document.getElementById("encodedMessage").innerText = encoded || "No encoded message";
-      document.getElementById("decodedMessage").innerText = decoded || "No decoded message";
+    function decodeIndexLogic(text) {
+      let decoded = '', i = 0;
+      while (i < text.length) {
+        const ch = text[i];
+        if (ch === "_") {
+          decoded += " ";
+          i++;
+        } else if (/[2-9]/.test(ch) && i + 2 < text.length &&
+                   /[1-4]/.test(text[i + 1]) && text[i + 2] === "0") {
+          const key = ch;
+          const index = parseInt(text[i + 1]) - 1;
+          decoded += t9Map[key]?.[index] || "?";
+          i += 3;
+        } else {
+          decoded += ch;
+          i++;
+        }
+      }
+      return decoded;
+    }
+
+    function encodeBracketLogic(text) {
+      let encoded = '';
+      for (const char of text) {
+        if (/[a-z]/i.test(char)) {
+          encoded += letterToDigit[char.toLowerCase()] || char;
+        } else if (char === '_') {
+          encoded += '0';
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded;
+    }
+
+    function decodeBracketLogic(text) {
+      let decoded = '';
+      for (const char of text) {
+        decoded += t9Map[char] ? getRandomFromArray(t9Map[char]) : char;
+      }
+      return decoded;
+    }
+
+    function convert() {
+      const input = document.getElementById("textInput").value.trim();
+      const regex = /\[[^\]]*]/g;
+      let lastIndex = 0;
+      let encodedFinal = '';
+      let decodedFinal = '';
+
+      const matches = [...input.matchAll(regex)];
+
+      for (const match of matches) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        const before = input.substring(lastIndex, start);
+        const inside = match[0].slice(1, -1); // remove [ ]
+
+        // Handle part before brackets
+        encodedFinal += encodeIndexLogic(before);
+        decodedFinal += decodeIndexLogic(before);
+
+        // Handle bracket part
+        encodedFinal += encodeBracketLogic(inside);
+        decodedFinal += decodeBracketLogic(inside);
+
+        lastIndex = end;
+      }
+
+      // Handle any remaining after last bracket
+      const remaining = input.slice(lastIndex);
+      encodedFinal += encodeIndexLogic(remaining);
+      decodedFinal += decodeIndexLogic(remaining);
+
+      document.getElementById("encodedMessage").innerText = encodedFinal || "No encoded message";
+      document.getElementById("decodedMessage").innerText = decodedFinal || "No decoded message";
     }
 
     function copyText(id) {
