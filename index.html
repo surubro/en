@@ -214,3 +214,124 @@
   </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title> 123 Encoder / Decoder</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .copy-btn {
+      background: #28a745;
+    }
+    .output {
+      background: #f1f1f1;
+      padding: 10px;
+      font-size: 16px;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <input type="text" id="textInput" placeholder="Enter text to encode or decode..." />
+  <button onclick="Decode()">Encode</button>
+  <button onclick="Encode()">Decode</button>
+  <div class="output" id="outputBox">Output will appear here</div>
+  <button class="copy-btn" onclick="copyOutput()">Copy</button>
+
+  <script>
+    const t9Map = {
+      '2': ['a', 'b', 'c'],
+      '3': ['d', 'e', 'f'],
+      '4': ['g', 'h', 'i'],
+      '5': ['j', 'k', 'l'],
+      '6': ['m', 'n', 'o'],
+      '7': ['p', 'q', 'r', 's'],
+      '8': ['t', 'u', 'v'],
+      '9': ['w', 'x', 'y', 'z'],
+      '0': ['_']
+    };
+
+    const letterToDigit = {};
+    for (const digit in t9Map) {
+      t9Map[digit].forEach(letter => {
+        letterToDigit[letter] = digit;
+      });
+    }
+
+    const customCodes = {
+      "[1a_xp]": "$12097",
+      "[1l/_n/c_al]": "15/06/2025"
+      // Add more mappings as needed
+    };
+
+    function getRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // ✅ Encode: Letters → Numbers
+    function encode() {
+      const input = document.getElementById("textInput").value.trim().toLowerCase();
+      let output = "";
+
+      for (let char of input) {
+        output += letterToDigit[char] || char;
+      }
+
+      document.getElementById("outputBox").innerText = output || "No encoded output";
+    }
+
+    // ✅ Decode: Numbers → Random letters, with custom code replacements
+    function decode() {
+      let input = document.getElementById("textInput").value.trim();
+
+      // Step 1: Replace custom bracketed codes
+      for (const key in customCodes) {
+        input = input.replaceAll(key, customCodes[key]);
+      }
+
+      // Step 2: Convert digits to random letters
+      let output = "";
+      for (let char of input) {
+        if (t9Map[char]) {
+          output += getRandom(t9Map[char]);
+        } else {
+          output += char;
+        }
+      }
+
+      document.getElementById("outputBox").innerText = output || "No decoded output";
+    }
+
+    function copyOutput() {
+      const text = document.getElementById("outputBox").innerText;
+      navigator.clipboard.writeText(text).then(() => alert("Copied!"));
+    }
+  </script>
+
+</body>
+</html>
