@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart T9 Encoder Decoder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 50px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 20px; }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover { background-color: #45a049; }
+    .copy-btn {
+      margin-top: 5px;
+      padding: 5px 10px;
+      background-color: #008CBA;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background-color: #007B9E; }
+    .output {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .text-box {
+      width: 100%;
+      padding: 10px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    .copyright {
+      margin-top: 40px;
+      text-align: center;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart T9 Encoder and Decoder</h1>
+
+  <label for="textInput">Enter message:</label>
+  <textarea id="textInput" placeholder="Try '[abc]71032' or '710...'"></textarea>
+
+  <button onclick="encode()">Encode</button>
+  <button onclick="decode()">Decode</button>
+
+  <div class="output">
+    <p><strong>Encoded Message:</strong></p>
+    <div id="encodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('encodedMessage')">Copy</button>
+
+    <p><strong>Decoded Message:</strong></p>
+    <div id="decodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('decodedMessage')">Copy</button>
+  </div>
+
+  <div class="copyright">
+    Made with ❤️ by Surendra Sonawane
+  </div>
+
+  <script>
+    const t9Map = {
+      '2': ['a', 'b', 'c'],
+      '3': ['d', 'e', 'f'],
+      '4': ['g', 'h', 'i'],
+      '5': ['j', 'k', 'l'],
+      '6': ['m', 'n', 'o'],
+      '7': ['p', 'q', 'r', 's'],
+      '8': ['t', 'u', 'v'],
+      '9': ['w', 'x', 'y', 'z'],
+      '0': ['_']
+    };
+
+    const letterToDigit = {};
+    for (const digit in t9Map) {
+      t9Map[digit].forEach(letter => letterToDigit[letter] = digit);
+    }
+
+    function encodeIndexLogic(text) {
+      let encoded = '';
+      for (const char of text) {
+        const lowerChar = char.toLowerCase();
+        if (lowerChar === " ") {
+          encoded += "_";
+        } else if (/[a-z]/.test(lowerChar)) {
+          for (const [key, letters] of Object.entries(t9Map)) {
+            const index = letters.indexOf(lowerChar);
+            if (index !== -1) {
+              encoded += key + (index + 1) + "0";
+              break;
+            }
+          }
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded.endsWith("0") ? encoded.slice(0, -1) : encoded;
+    }
+
+    function decodeIndexLogic(text) {
+      let decoded = '', i = 0;
+      while (i < text.length) {
+        const ch = text[i];
+        if (ch === "_") {
+          decoded += " ";
+          i++;
+        } else if (/[2-9]/.test(ch) && i + 2 < text.length &&
+                   /[1-4]/.test(text[i + 1]) && text[i + 2] === "0") {
+          const key = ch;
+          const index = parseInt(text[i + 1]) - 1;
+          decoded += t9Map[key]?.[index] || "?";
+          i += 3;
+        } else {
+          decoded += ch;
+          i++;
+        }
+      }
+      return decoded;
+    }
+
+    function encodeBracketContent(text) {
+      let encoded = '';
+      for (const char of text) {
+        if (/[a-z]/i.test(char)) {
+          encoded += letterToDigit[char.toLowerCase()] || char;
+        } else if (char === '_') {
+          encoded += '0';
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded;
+    }
+
+    function encode() {
+      const input = document.getElementById("textInput").value.trim();
+      const regex = /\[[^\]]*]/g;
+      let lastIndex = 0;
+      let encodedFinal = '';
+
+      const matches = [...input.matchAll(regex)];
+
+      for (const match of matches) {
+        const start = match.index;
+        const end = start + match[0].length;
+        const before = input.substring(lastIndex, start);
+        const inside = match[0].slice(1, -1);
+
+        encodedFinal += encodeIndexLogic(before);
+        encodedFinal += encodeBracketContent(inside);
+
+        lastIndex = end;
+      }
+
+      const remaining = input.slice(lastIndex);
+      encodedFinal += encodeIndexLogic(remaining);
+
+      document.getElementById("encodedMessage").innerText = encodedFinal || "No encoded message";
+    }
+
+    function decode() {
+      const input = document.getElementById("textInput").value.trim();
+      document.getElementById("decodedMessage").innerText = decodeIndexLogic(input) || "No decoded message";
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Text copied to clipboard!"))
+        .catch(err => alert("Copy failed: " + err));
+    }
+  </script>
+</body>
+</html>
