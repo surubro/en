@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smartx T9 Encoder Decoder</title>
+  <title>Smart T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -48,7 +48,7 @@
   <h1>Smart T9 Encoder and Decoder</h1>
 
   <label for="textInput">Enter message:</label>
-  <textarea id="textInput" placeholder="Example: promised-12000 [p32] 15/06/2025 [received]"></textarea>
+  <textarea id="textInput" placeholder="Enter T9 message or text here..."></textarea>
 
   <button onclick="encode()">Encode</button>
   <button onclick="decode()">Decode</button>
@@ -127,18 +127,18 @@
       return decoded;
     }
 
-    function encodeBracketContent(text) {
-      let encoded = '';
-      for (const char of text) {
+    function convertTextToT9ThenDecode(text) {
+      let converted = '';
+      for (let char of text) {
         if (/[a-z]/i.test(char)) {
-          encoded += letterToDigit[char.toLowerCase()] || char;
+          converted += letterToDigit[char.toLowerCase()] || char;
         } else if (char === '_') {
-          encoded += '0';
+          converted += '0';
         } else {
-          encoded += char;
+          converted += char;
         }
       }
-      return encoded;
+      return decodeIndexLogic(converted);
     }
 
     function encode() {
@@ -157,7 +157,6 @@
 
         encodedFinal += encodeIndexLogic(before);
         encodedFinal += "[" + encodeBracketContent(inside) + "]";
-
         lastIndex = end;
       }
 
@@ -165,6 +164,20 @@
       encodedFinal += encodeIndexLogic(remaining);
 
       document.getElementById("encodedMessage").innerText = encodedFinal || "No encoded message";
+    }
+
+    function encodeBracketContent(text) {
+      let encoded = '';
+      for (const char of text) {
+        if (/[a-z]/i.test(char)) {
+          encoded += letterToDigit[char.toLowerCase()] || char;
+        } else if (char === '_') {
+          encoded += '0';
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded;
     }
 
     function decode() {
@@ -182,8 +195,7 @@
         const inside = match[0].slice(1, -1);
 
         decodedFinal += decodeIndexLogic(before);
-        decodedFinal += decodeIndexLogic(inside);
-
+        decodedFinal += convertTextToT9ThenDecode(inside);
         lastIndex = end;
       }
 
