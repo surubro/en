@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart T9 Encoder Decoder</title>
+  <title>Smartx T9 Encoder Decoder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -48,7 +48,7 @@
   <h1>Smart T9 Encoder and Decoder</h1>
 
   <label for="textInput">Enter message:</label>
-  <textarea id="textInput" placeholder="Try '[abc]71032' or '710...'"></textarea>
+  <textarea id="textInput" placeholder="Example: promised-12000 [p32] 15/06/2025 [received]"></textarea>
 
   <button onclick="encode()">Encode</button>
   <button onclick="decode()">Decode</button>
@@ -156,7 +156,7 @@
         const inside = match[0].slice(1, -1);
 
         encodedFinal += encodeIndexLogic(before);
-        encodedFinal += encodeBracketContent(inside);
+        encodedFinal += "[" + encodeBracketContent(inside) + "]";
 
         lastIndex = end;
       }
@@ -169,7 +169,28 @@
 
     function decode() {
       const input = document.getElementById("textInput").value.trim();
-      document.getElementById("decodedMessage").innerText = decodeIndexLogic(input) || "No decoded message";
+      const regex = /\[[^\]]*]/g;
+      let lastIndex = 0;
+      let decodedFinal = '';
+
+      const matches = [...input.matchAll(regex)];
+
+      for (const match of matches) {
+        const start = match.index;
+        const end = start + match[0].length;
+        const before = input.substring(lastIndex, start);
+        const inside = match[0].slice(1, -1);
+
+        decodedFinal += decodeIndexLogic(before);
+        decodedFinal += decodeIndexLogic(inside);
+
+        lastIndex = end;
+      }
+
+      const remaining = input.slice(lastIndex);
+      decodedFinal += decodeIndexLogic(remaining);
+
+      document.getElementById("decodedMessage").innerText = decodedFinal || "No decoded message";
     }
 
     function copyText(id) {
