@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smartx T9 Encoder Decoder (T9 Random Suffix)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smartx T9 Encoder Decoder (Alternating)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -45,7 +45,7 @@
   </style>
 </head>
 <body>
-  <h1>Smart T9 Encoder and Decoder (T9 Full Random Suffix)</h1>
+  <h1>Smart T9 Encoder and Decoder (Alternate T9 + Grouped)</h1>
 
   <label for="textInput">Enter message:</label>
   <textarea id="textInput" placeholder="Enter text or encoded message..."></textarea>
@@ -79,41 +79,75 @@
       9: ['w', 'x', 'y', 'z']
     };
 
-    let decoderMap = {}; // reset for each encoding
+    const letterGroups = [
+      ['a','b','c'],
+      ['d','e','f'],
+      ['g','h','i'],
+      ['j','k','l'],
+      ['m','n','o'],
+      ['p','q','r'],
+      ['s','t','u'],
+      ['v','w','x'],
+      ['y','z']
+    ];
+
+    let decoderMap = {};
 
     function encode() {
       const input = document.getElementById("textInput").value.trim().toLowerCase();
       let encoded = '';
       decoderMap = {};
 
-      for (const char of input) {
+      for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+
         if (char === ' ') {
           encoded += '1';
+          continue;
+        }
+
+        let indexInT9 = -1, originalDigit = null;
+
+        for (const [digit, letters] of Object.entries(t9Sets)) {
+          const idx = letters.indexOf(char);
+          if (idx !== -1) {
+            indexInT9 = idx;
+            originalDigit = digit;
+            break;
+          }
+        }
+
+        if (indexInT9 === -1) {
+          encoded += char;
+          continue;
+        }
+
+        let digit, suffixLetter;
+
+        if (i % 2 === 0) {
+          // true T9 encoding
+          digit = originalDigit;
+          suffixLetter = t9Sets[digit][indexInT9];
         } else {
-          // find original T9 digit + index
-          let originalIndex = -1;
-          for (const [digit, letters] of Object.entries(t9Sets)) {
-            const index = letters.indexOf(char);
-            if (index !== -1) {
-              originalIndex = index;
+          // grouped 3-letter random encoding
+          const validGroups = letterGroups.filter(group => group.length > indexInT9);
+          const randomGroup = validGroups[Math.floor(Math.random() * validGroups.length)];
+          suffixLetter = randomGroup[indexInT9];
+
+          // find which T9 group this suffixLetter belongs to
+          for (const [d, group] of Object.entries(t9Sets)) {
+            if (group.includes(suffixLetter)) {
+              digit = d;
               break;
             }
           }
-          if (originalIndex === -1) {
-            encoded += char;
-            continue;
-          }
-
-          // pick random T9 group that has enough letters
-          const candidates = Object.entries(t9Sets).filter(([_, letters]) => letters.length > originalIndex);
-          const [randDigit, randLetters] = candidates[Math.floor(Math.random() * candidates.length)];
-          const suffixLetter = randLetters[originalIndex];
-          const suffixCode = String.fromCharCode(97 + randLetters.indexOf(suffixLetter)); // a = 97
-          const code = randDigit + suffixCode;
-
-          decoderMap[code] = char;
-          encoded += code;
         }
+
+        const suffixChar = String.fromCharCode(97 + t9Sets[digit].indexOf(suffixLetter)); // a = 97
+        const code = digit + suffixChar;
+
+        encoded += code;
+        decoderMap[code] = char;
       }
 
       document.getElementById("encodedMessage").innerText = encoded || "No encoded message";
