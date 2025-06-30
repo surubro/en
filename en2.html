@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smartx T9 Encoder Decoder (Random a–z)</title>
+  <title>Smartx T9 Encoder Decoder (Random T9 Index Matching)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 50px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -45,7 +45,7 @@
   </style>
 </head>
 <body>
-  <h1>Smart T9 Encoder and Decoder (Random a–z)</h1>
+  <h1>Smart T9 Encoder and Decoder (Random T9 Index Matching)</h1>
 
   <label for="textInput">Enter message:</label>
   <textarea id="textInput" placeholder="Enter text or encoded message..."></textarea>
@@ -80,34 +80,41 @@
     };
 
     const encoderMap = {};
-    const decoderMap = {};
-
-    // Generate encoder map and decoder map
     for (const [digit, letters] of Object.entries(t9Sets)) {
-      letters.forEach((letter) => {
-        encoderMap[letter] = digit;
+      letters.forEach((letter, index) => {
+        encoderMap[letter] = { digit, index };
       });
     }
 
-    function getRandomLetterAZ() {
-      const code = 97 + Math.floor(Math.random() * 26); // a–z
-      return String.fromCharCode(code);
+    let decoderMap = {};
+
+    function getRandomGroupWithLength(length) {
+      const groups = Object.entries(t9Sets).filter(([_, letters]) => letters.length > length);
+      const [digit, letters] = groups[Math.floor(Math.random() * groups.length)];
+      return { digit, letter: letters[length] };
+    }
+
+    function getRandomGroupWithSameIndex(index) {
+      const groups = Object.entries(t9Sets).filter(([_, letters]) => index < letters.length);
+      const [digit, letters] = groups[Math.floor(Math.random() * groups.length)];
+      return { digit, letter: letters[index] };
     }
 
     function encode() {
       const input = document.getElementById("textInput").value.trim().toLowerCase();
       let encoded = '';
-      decoderMapClear();
+      decoderMap = {};
 
       for (const char of input) {
         if (char === ' ') {
           encoded += '1';
         } else if (encoderMap[char]) {
-          const digit = encoderMap[char];
-          const randomSuffix = getRandomLetterAZ();
-          const code = digit + randomSuffix;
+          const { index } = encoderMap[char];
+          const { digit, letter } = getRandomGroupWithSameIndex(index);
+          const suffix = String.fromCharCode(97 + t9Sets[digit].indexOf(letter));
+          const code = digit + suffix;
           encoded += code;
-          decoderMap[code] = char; // store for decoding
+          decoderMap[code] = char;
         } else {
           encoded += char;
         }
@@ -146,12 +153,6 @@
       navigator.clipboard.writeText(text)
         .then(() => alert("Text copied to clipboard!"))
         .catch(err => alert("Copy failed: " + err));
-    }
-
-    function decoderMapClear() {
-      for (const key in decoderMap) {
-        delete decoderMap[key];
-      }
     }
   </script>
 </body>
