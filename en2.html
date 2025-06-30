@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smar T9 Encoder Decoder (Alternating)</title>
+  <title>Smartq T9 Encoder Decoder (Custom 3-Set Logic)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
     textarea { width: 100%; height: 100px; margin-bottom: 20px; }
@@ -45,7 +45,7 @@
   </style>
 </head>
 <body>
-  <h1>Smart T9 Encoder and Decoder (Alternate T9 + Grouped)</h1>
+  <h1>Smartx T9 Encoder and Decoder (Custom 3-Set Alternating Logic)</h1>
 
   <label for="textInput">Enter message:</label>
   <textarea id="textInput" placeholder="Enter text or encoded message..."></textarea>
@@ -68,6 +68,7 @@
   </div>
 
   <script>
+    // Standard T9 mapping
     const t9Sets = {
       2: ['a', 'b', 'c'],
       3: ['d', 'e', 'f'],
@@ -79,17 +80,34 @@
       9: ['w', 'x', 'y', 'z']
     };
 
-    const letterGroups = [
-      ['a','b','c'],
-      ['d','e','f'],
-      ['g','h','i'],
-      ['j','k','l'],
-      ['m','n','o'],
-      ['p','q','r'],
-      ['s','t','u'],
-      ['v','w','x'],
-      ['y','z']
+    // Custom 3-letter groups for alternate letters
+    const customGroups = [
+      ['a', 'b', 'c'],
+      ['d', 'e', 'f'],
+      ['g', 'h', 'i'],
+      ['j', 'k', 'l'],
+      ['m', 'n', 'o'],
+      ['p', 'q', 'r'],
+      ['s', 't', 'u'],
+      ['v', 'w', 'x'],
+      ['y', 'z', 'a']
     ];
+
+    // Build encoder lookup (letter → [digit, index])
+    const t9Lookup = {};
+    for (const [digit, letters] of Object.entries(t9Sets)) {
+      letters.forEach((letter, index) => {
+        t9Lookup[letter] = { digit, index };
+      });
+    }
+
+    // Build reverse lookup (letter → digit)
+    const letterToDigit = {};
+    for (const [digit, letters] of Object.entries(t9Sets)) {
+      for (const letter of letters) {
+        letterToDigit[letter] = digit;
+      }
+    }
 
     let decoderMap = {};
 
@@ -106,46 +124,29 @@
           continue;
         }
 
-        let indexInT9 = -1, originalDigit = null;
-
-        for (const [digit, letters] of Object.entries(t9Sets)) {
-          const idx = letters.indexOf(char);
-          if (idx !== -1) {
-            indexInT9 = idx;
-            originalDigit = digit;
-            break;
-          }
-        }
-
-        if (indexInT9 === -1) {
+        if (!t9Lookup[char]) {
           encoded += char;
           continue;
         }
 
+        const { digit: originalDigit, index } = t9Lookup[char];
+
         let digit, suffixLetter;
 
         if (i % 2 === 0) {
-          // true T9 encoding
+          // Use T9 standard
           digit = originalDigit;
-          suffixLetter = t9Sets[digit][indexInT9];
+          suffixLetter = t9Sets[digit][index];
         } else {
-          // grouped 3-letter random encoding
-          const validGroups = letterGroups.filter(group => group.length > indexInT9);
-          const randomGroup = validGroups[Math.floor(Math.random() * validGroups.length)];
-          suffixLetter = randomGroup[indexInT9];
-
-          // find which T9 group this suffixLetter belongs to
-          for (const [d, group] of Object.entries(t9Sets)) {
-            if (group.includes(suffixLetter)) {
-              digit = d;
-              break;
-            }
-          }
+          // Use random group from custom 3-letter sets
+          const possibleGroups = customGroups.filter(group => index < group.length);
+          const group = possibleGroups[Math.floor(Math.random() * possibleGroups.length)];
+          suffixLetter = group[index];
+          digit = letterToDigit[suffixLetter]; // find T9 digit for this letter
         }
 
-        const suffixChar = String.fromCharCode(97 + t9Sets[digit].indexOf(suffixLetter)); // a = 97
+        const suffixChar = String.fromCharCode(97 + t9Sets[digit].indexOf(suffixLetter)); // 'a' + index
         const code = digit + suffixChar;
-
         encoded += code;
         decoderMap[code] = char;
       }
