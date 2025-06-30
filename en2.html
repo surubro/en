@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smartx T9 Encoder Decoder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 50px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 20px; }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover { background-color: #45a049; }
+    .copy-btn {
+      margin-top: 5px;
+      padding: 5px 10px;
+      background-color: #008CBA;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background-color: #007B9E; }
+    .output {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .text-box {
+      width: 100%;
+      padding: 10px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    .copyright {
+      margin-top: 40px;
+      text-align: center;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart T9 Encoder and Decoder</h1>
+
+  <label for="textInput">Enter message:</label>
+  <textarea id="textInput" placeholder="Enter T9 message or text here..."></textarea>
+
+  <button onclick="encode()">Encode</button>
+  <button onclick="decode()">Decode</button>
+
+  <div class="output">
+    <p><strong>Encoded Message:</strong></p>
+    <div id="encodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('encodedMessage')">Copy</button>
+
+    <p><strong>Decoded Message:</strong></p>
+    <div id="decodedMessage" class="text-box"></div>
+    <button class="copy-btn" onclick="copyText('decodedMessage')">Copy</button>
+  </div>
+
+  <div class="copyright">
+    Made with ❤️ by Surendra Sonawane
+  </div>
+
+  <script>
+    const t9Sets = {
+      2: ['a', 'b', 'c'],
+      3: ['d', 'e', 'f'],
+      4: ['g', 'h', 'i'],
+      5: ['j', 'k', 'l'],
+      6: ['m', 'n', 'o'],
+      7: ['p', 'q', 'r', 's'],
+      8: ['t', 'u', 'v'],
+      9: ['w', 'x', 'y', 'z']
+    };
+
+    const letterToT9Code = {};
+    for (const [key, letters] of Object.entries(t9Sets)) {
+      letters.forEach((letter, index) => {
+        const code = key + String.fromCharCode(97 + index); // a = 97
+        letterToT9Code[letter] = code;
+      });
+    }
+
+    function encode() {
+      const input = document.getElementById("textInput").value.trim().toLowerCase();
+      let encoded = '';
+      for (const char of input) {
+        if (char === ' ') {
+          encoded += '1';
+        } else if (letterToT9Code[char]) {
+          encoded += letterToT9Code[char];
+        } else {
+          encoded += char; // keep digits, punctuation, etc.
+        }
+      }
+      document.getElementById("encodedMessage").innerText = encoded || "No encoded message";
+    }
+
+    function decode() {
+      const input = document.getElementById("textInput").value.trim();
+      let decoded = '';
+      let i = 0;
+      while (i < input.length) {
+        const char = input[i];
+
+        if (char === '1') {
+          decoded += ' ';
+          i++;
+        } else if (/[2-9]/.test(char) && i + 1 < input.length && /[a-d]/i.test(input[i + 1])) {
+          const digit = char;
+          const index = input[i + 1].toLowerCase().charCodeAt(0) - 97;
+          decoded += t9Sets[digit]?.[index] || '?';
+          i += 2;
+        } else {
+          decoded += char;
+          i++;
+        }
+      }
+      document.getElementById("decodedMessage").innerText = decoded || "No decoded message";
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Text copied to clipboard!"))
+        .catch(err => alert("Copy failed: " + err));
+    }
+  </script>
+</body>
+</html>
