@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caesar Cipher Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    a {
+      color: blue;
+      text-decoration: underline;
+    }
+    .alphabet {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .letter-box {
+      width: 25px;
+      height: 25px;
+      border: 1px solid #aaa;
+      text-align: center;
+      line-height: 25px;
+      background-color: white;
+    }
+    .section {
+      margin-top: 20px;
+    }
+    button {
+      padding: 6px 12px;
+      margin-top: 10px;
+    }
+    .flex {
+      display: flex;
+      gap: 50px;
+      margin-top: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+    .box {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#">Watch this video to show you how to use this page.</a>
+
+  <div class="section">
+    <div>Original Alphabet</div>
+    <div class="alphabet" id="original"></div>
+
+    <div>Substitution</div>
+    <div class="alphabet" id="substitution"></div>
+
+    <div id="shiftDisplay">0 shifts</div>
+    <button onclick="shiftAlphabet()">Shift</button>
+  </div>
+
+  <div class="flex">
+    <div class="box">
+      <h3>Encrypt your message:</h3>
+      <div>Plaintext:</div>
+      <textarea id="plaintext"></textarea>
+      <br>
+      <button onclick="encrypt()">Encrypt</button>
+      <div>Ciphertext:</div>
+      <textarea id="ciphertext" readonly></textarea>
+    </div>
+
+    <div class="box">
+      <h3>Decrypt your message:</h3>
+      <div>Ciphertext:</div>
+      <textarea id="decryptInput"></textarea>
+      <br>
+      <button onclick="decrypt()">Decrypt</button>
+      <div>Plaintext:</div>
+      <textarea id="decrypted" readonly></textarea>
+    </div>
+  </div>
+
+  <script>
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    let shift = 0;
+
+    function updateDisplay() {
+      const originalDiv = document.getElementById('original');
+      const substitutionDiv = document.getElementById('substitution');
+      const shiftDisplay = document.getElementById('shiftDisplay');
+
+      originalDiv.innerHTML = '';
+      substitutionDiv.innerHTML = '';
+
+      alphabet.forEach(letter => {
+        const div = document.createElement('div');
+        div.className = 'letter-box';
+        div.textContent = letter;
+        originalDiv.appendChild(div);
+      });
+
+      const shifted = alphabet.map((_, i) => alphabet[(i + shift) % 26]);
+      shifted.forEach(letter => {
+        const div = document.createElement('div');
+        div.className = 'letter-box';
+        div.textContent = letter;
+        substitutionDiv.appendChild(div);
+      });
+
+      shiftDisplay.textContent = `${shift} shifts`;
+    }
+
+    function shiftAlphabet() {
+      shift = (shift + 1) % 26;
+      updateDisplay();
+    }
+
+    function encrypt() {
+      const text = document.getElementById('plaintext').value.toUpperCase();
+      let result = '';
+      for (let char of text) {
+        const index = alphabet.indexOf(char);
+        result += index === -1 ? char : alphabet[(index + shift) % 26];
+      }
+      document.getElementById('ciphertext').value = result;
+    }
+
+    function decrypt() {
+      const text = document.getElementById('decryptInput').value.toUpperCase();
+      let result = '';
+      for (let char of text) {
+        const index = alphabet.indexOf(char);
+        result += index === -1 ? char : alphabet[(index - shift + 26) % 26];
+      }
+      document.getElementById('decrypted').value = result;
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
