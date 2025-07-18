@@ -105,7 +105,7 @@ Use the "Copy" button below each result.
 
 ## 🧑‍💻 Developed By
 
-**Surendra Sonawane**\
+**Surendra Ravindra Sonawane**\
 Made with ❤️ and JavaScript
 
 ---
