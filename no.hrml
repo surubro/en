@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ABC ↔ Number Encoder/Decoder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 300px; height: 80px; }
+    button { margin: 5px; padding: 5px 10px; }
+    .result { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>ABC ↔ Number Encoder/Decoder</h1>
+
+  <label>Enter text or numbers (space separated):</label><br>
+  <textarea id="inputText"></textarea><br>
+
+  <button onclick="encode()">Encode (a→1, b→2...)</button>
+  <button onclick="decode()">Decode (1→a, 2→b...)</button>
+
+  <div class="result" id="output"></div>
+
+  <script>
+    function encode() {
+      let text = document.getElementById("inputText").value.toLowerCase();
+      let numbers = [];
+      for (let char of text) {
+        if (char >= 'a' && char <= 'z') {
+          numbers.push(char.charCodeAt(0) - 96); // 'a' is 97 in ASCII
+        } else if (char === ' ') {
+          numbers.push(' '); // Keep spaces
+        }
+      }
+      document.getElementById("output").innerText = numbers.join(' ');
+    }
+
+    function decode() {
+      let nums = document.getElementById("inputText").value.split(/[\s,]+/);
+      let text = '';
+      for (let num of nums) {
+        if (num.trim() === '') continue;
+        let n = parseInt(num);
+        if (!isNaN(n) && n >= 1 && n <= 26) {
+          text += String.fromCharCode(n + 96);
+        } else if (num === '') {
+          text += ' ';
+        }
+      }
+      document.getElementById("output").innerText = text;
+    }
+  </script>
+
+</body>
+</html>
