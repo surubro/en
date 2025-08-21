@@ -53,7 +53,7 @@
   <button onclick="encode()">Encode</button>
   <button onclick="decode()">Decode</button>
   <button onclick="window.open('https://surubro.github.io/123/', '_blank')">Open 123</button>
-
+  <button onclick="clearInput()">Clear</button>
 
   <div class="output">
     <p><strong>Encoded Message:</strong></p>
@@ -212,6 +212,12 @@
       navigator.clipboard.writeText(text)
         .then(() => alert("Text copied to clipboard!"))
         .catch(err => alert("Copy failed: " + err));
+    }
+
+    function clearInput() {
+      document.getElementById("textInput").value = "";
+      document.getElementById("encodedMessage").innerText = "";
+      document.getElementById("decodedMessage").innerText = "";
     }
   </script>
 </body>
